@@ -7,11 +7,11 @@ from rest_framework.test import APIClient
 from map.models import CommunityArea, RestaurantPermit
 
 
-@pytest.mark.django_db
-def test_map_data_view():
+@pytest.fixture
+def map_data_response():
     # Create some test community areas
-    area1 = CommunityArea.objects.create(name="Beverly", area_id="1")
-    area2 = CommunityArea.objects.create(name="Lincoln Park", area_id="2")
+    area1 = CommunityArea.objects.create(name="Beverly", area_id=1)
+    area2 = CommunityArea.objects.create(name="Lincoln Park", area_id=2)
 
     # Test permits for Beverly
     RestaurantPermit.objects.create(
@@ -34,9 +34,15 @@ def test_map_data_view():
 
     # Query the map data endpoint
     client = APIClient()
-    response = client.get(reverse("map_data"), {"year": 2021})
+    return client.get(reverse("map_data"), {"year": 2021})
 
-    # TODO: Complete the test by asserting that the /map-data/ endpoint
-    # returns the correct number of permits for Beverly and Lincoln 
-    # Park in 2021
+@pytest.mark.django_db
+def test_map_data_status(map_data_response):
+    assert map_data_response.status_code == 200
+
+@pytest.mark.django_db
+def test_map_data_permit_counts(map_data_response):
+    area_data = {item["area_id"]: item for item in map_data_response.json()}
     
+    assert area_data[1]["num_permits"] == 2
+    assert area_data[2]["num_permits"] == 3
