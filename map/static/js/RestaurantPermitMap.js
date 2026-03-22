@@ -45,21 +45,36 @@ export default function RestaurantPermitMap() {
   const yearlyDataEndpoint = `/map-data/?year=${year}`
 
   useEffect(() => {
-    fetch()
+    fetch(yearlyDataEndpoint)
       .then((res) => res.json())
       .then((data) => {
-        /**
-         * TODO: Fetch the data needed to supply to map with data
-         */
+        setCurrentYearData(data)
       })
+      .catch((error) => {
+        console.error("Failed to fetch map data", error);
+      })            
   }, [yearlyDataEndpoint])
 
+    // Basic calculations with count-only array
+    const permitCounts = currentYearData.map( ({num_permits}) => num_permits )
+    const { totalNumPermits, maxNumPermits } = permitCounts.reduce(
+        (acc, val) => ({
+            totalNumPermits: acc.totalNumPermits + val,
+            maxNumPermits: val > acc.maxNumPermits ? val : acc.maxNumPermits 
+        }),
+        { totalNumPermits: 0, maxNumPermits: 0 }
+    )
 
-  function getColor(percentageOfPermits) {
-    /**
-     * TODO: Use this function in setAreaInteraction to set a community 
-     * area's color using the communityAreaColors constant above
-     */
+    const maxPercentage = maxNumPermits / totalNumPermits
+    
+    // Set maxPercentage as darkest and use it as the basis of breakpoints
+    // Don't want to pin breakpoints to actual distribution, e.g. quartiles
+    // Want to reflect skewing, not control for it
+    function getColor(percentageOfPermits) {
+        if (percentageOfPermits < (.25 * maxPercentage)) { return communityAreaColors[0] }
+        if (percentageOfPermits < (.5 * maxPercentage)) { return communityAreaColors[1] }
+        if (percentageOfPermits < (.75 * maxPercentage)) { return communityAreaColors[2] }
+        return communityAreaColors[3] 
   }
 
   function setAreaInteraction(feature, layer) {
@@ -81,11 +96,10 @@ export default function RestaurantPermitMap() {
     <>
       <YearSelect filterVal={year} setFilterVal={setYear} />
       <p className="fs-4">
-        Restaurant permits issued this year: {/* TODO: display this value */}
+        Restaurant permits issued this year: { totalNumPermits }
       </p>
       <p className="fs-4">
-        Maximum number of restaurant permits in a single area:
-        {/* TODO: display this value */}
+        Maximum number of restaurant permits in a single area: { maxNumPermits }
       </p>
       <MapContainer
         id="restaurant-map"
