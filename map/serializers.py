@@ -12,11 +12,11 @@ class CommunityAreaSerializer(serializers.ModelSerializer):
 
     def get_num_permits(self, obj):
 
-        year = self.context.get('year')
-        
+        year = self.context.get("year")
+
         result = 0
-        if (obj.area_id is not None):
+        if obj.area_id is not None:
             result = RestaurantPermit.objects.filter(
-                community_area_id = obj.area_id,
-                issue_date__year = year).count()
+                community_area_id=obj.area_id, issue_date__year=year
+            ).count()
         return result
