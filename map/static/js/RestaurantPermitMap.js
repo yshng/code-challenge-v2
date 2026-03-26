@@ -77,19 +77,38 @@ export default function RestaurantPermitMap() {
         return communityAreaColors[3] 
   }
 
+  const areaById = Object.fromEntries(
+    currentYearData.map(({ area_id, ...rest }) => [area_id, rest])
+  )
+    
   function setAreaInteraction(feature, layer) {
-    /**
-     * TODO: Use the methods below to:
-     * 1) Shade each community area according to what percentage of 
-     * permits were issued there in the selected year
-     * 2) On hover, display a popup with the community area's raw 
-     * permit count for the year
-     */
-    layer.setStyle()
-    layer.on("", () => {
-      layer.bindPopup("")
-      layer.openPopup()
-    })
+      const areaData = areaById[feature.properties.area_num_1]
+      if (!areaData) return
+
+      const num_permits = areaData.num_permits  
+      const percentageOfPermits = num_permits / totalNumPermits
+      
+      layer.setStyle({
+          color: "#bbb",
+          weight: 1,
+          fillColor: getColor(percentageOfPermits),
+          fillOpacity: 1
+      })
+
+    if (num_permits === 0) {
+      // Setting { fill: false } will fail to trigger mouse events
+      layer.setStyle({ fillOpacity: 0 })
+    }
+
+      const percentageForPopup = (percentageOfPermits * 100).toFixed(2)
+      layer.on("mouseover", () => {
+          layer.bindPopup(`${areaData.name}: ${num_permits} <br>
+                          (${percentageForPopup}% of all permits issued in ${year})`)
+          layer.openPopup()
+      })
+      layer.on("mouseout", () => {
+          layer.closePopup();
+      })
   }
 
   return (
